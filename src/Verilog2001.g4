@@ -2,7 +2,6 @@
  [The "BSD licence"]
  Copyright (c) 2013 Terence Parr
  All rights reserved.
-
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
  are met:
@@ -13,7 +12,6 @@
     documentation and/or other materials provided with the distribution.
  3. The name of the author may not be used to endorse or promote products
     derived from this software without specific prior written permission.
-
  THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
@@ -37,18 +35,14 @@ grammar Verilog2001;
 // 1.1 Library source text
 /* -- Some of this grammar removed as I didn't care about it
 library_text : ( library_descriptions )* ;
-
 library_descriptions
 	 : library_declaration
 	 | include_statement
 	 | config_declaration
 ;
-
 library_declaration :
 'library' library_identifier File_path_spec ( ( ',' File_path_spec )* )? ( '-incdir' File_path_spec ( ',' File_path_spec )* )? ';' ;
-
 File_path_spec : ([/~]|'./') ~[ \r\t\n]*? ;
-
 include_statement : 'include' File_path_spec ';' ;
 */
 // 1.2 Configuration source text
@@ -164,6 +158,7 @@ module_or_generate_item
    | attribute_instance* parameter_override
    | attribute_instance* continuous_assign
    | attribute_instance* gate_instantiation
+//   | attribute_instance* udp_instantiation
    | attribute_instance* module_instantiation
    | attribute_instance* initial_construct
    | attribute_instance* always_construct
@@ -199,7 +194,7 @@ parameter_override
 // 2.1 Declaration types
 // 2.1.1 Module parameter declarations
 local_parameter_declaration
-   : 'localparam' ('signed')? (range)? list_of_param_assignments ';'
+   : 'localparam' ('signed')? (range_)? list_of_param_assignments ';'
    | 'localparam' 'integer' list_of_param_assignments ';'
    | 'localparam' 'real' list_of_param_assignments ';'
    | 'localparam' 'realtime' list_of_param_assignments ';'
@@ -214,7 +209,7 @@ parameter_declaration
 // #(parameter B=8) since it wants a ';' in (...). Rule
 // module_parameter_port_list calls this one.
 parameter_declaration_
-   : 'parameter' ('signed')? (range)? list_of_param_assignments
+   : 'parameter' ('signed')? (range_)? list_of_param_assignments
    | 'parameter' 'integer' list_of_param_assignments
    | 'parameter' 'real' list_of_param_assignments
    | 'parameter' 'realtime' list_of_param_assignments
@@ -222,22 +217,22 @@ parameter_declaration_
    ;
 
 specparam_declaration
-   : 'specparam' (range)? list_of_specparam_assignments ';'
+   : 'specparam' (range_)? list_of_specparam_assignments ';'
    ;
 
 // 2.1.2 Port declarations
 inout_declaration
-   : 'inout' (net_type)? ('signed')? (range)? list_of_port_identifiers
+   : 'inout' (net_type)? ('signed')? (range_)? list_of_port_identifiers
    ;
 
 input_declaration
-   : 'input' (net_type)? ('signed')? (range)? list_of_port_identifiers
+   : 'input' (net_type)? ('signed')? (range_)? list_of_port_identifiers
    ;
 
 output_declaration
-   : 'output' (net_type)? ('signed')? (range)? list_of_port_identifiers
-   | 'output' ('reg')? ('signed')? (range)? list_of_port_identifiers
-   | 'output' 'reg' ('signed')? (range)? list_of_variable_port_identifiers
+   : 'output' (net_type)? ('signed')? (range_)? list_of_port_identifiers
+   | 'output' ('reg')? ('signed')? (range_)? list_of_port_identifiers
+   | 'output' 'reg' ('signed')? (range_)? list_of_variable_port_identifiers
    | 'output' (output_variable_type)? list_of_port_identifiers
    | 'output' output_variable_type list_of_variable_port_identifiers
    ;
@@ -268,7 +263,7 @@ realtime_declaration
    ;
 
 reg_declaration
-   : 'reg' ('signed')? (range)? list_of_variable_identifiers ';'
+   : 'reg' ('signed')? (range_)? list_of_variable_identifiers ';'
    ;
 
 net_declaration
@@ -276,10 +271,10 @@ net_declaration
    | net_type (drive_strength)? ('signed')? (delay3)? list_of_net_decl_assignments ';'
    | 'trireg' (drive_strength)? ('signed')? (delay3)? list_of_net_decl_assignments ';'
    | 'trireg' (charge_strength)? ('signed')? (delay3)? list_of_net_identifiers ';'
-   | 'trireg' (charge_strength)? ('vectored' | 'scalared')? ('signed')? range (delay3)? list_of_net_identifiers ';'
-   | 'trireg' (drive_strength)? ('vectored' | 'scalared')? ('signed')? range (delay3)? list_of_net_decl_assignments ';'
-   | net_type (drive_strength)? ('vectored' | 'scalared')? ('signed')? range (delay3)? list_of_net_decl_assignments ';'
-   | net_type ('vectored' | 'scalared')? ('signed')? range (delay3)? list_of_net_identifiers ';'
+   | 'trireg' (charge_strength)? ('vectored' | 'scalared')? ('signed')? range_ (delay3)? list_of_net_identifiers ';'
+   | 'trireg' (drive_strength)? ('vectored' | 'scalared')? ('signed')? range_ (delay3)? list_of_net_decl_assignments ';'
+   | net_type (drive_strength)? ('vectored' | 'scalared')? ('signed')? range_ (delay3)? list_of_net_decl_assignments ';'
+   | net_type ('vectored' | 'scalared')? ('signed')? range_ (delay3)? list_of_net_identifiers ';'
    ;
 
 // 2.2 Declaration data types
@@ -314,12 +309,12 @@ variable_type
 
 // 2.2.2 Strengths
 drive_strength
-   : (strength0 ',' strength1)
-   | (strength1 ',' strength0)
-   | (strength0 ',' 'highz1')
-   | (strength1 ',' 'highz0')
-   | ('highz0' ',' strength1)
-   | ('highz1' ',' strength0)
+   : '(' strength0 ',' strength1 ')'
+   | '(' strength1 ',' strength0 ')'
+   | '(' strength0 ',' 'highz1' ')'
+   | '(' strength1 ',' 'highz0' ')'
+   | '(' 'highz0' ',' strength1 ')'
+   | '(' 'highz1' ',' strength0 ')'
    ;
 
 strength0
@@ -437,7 +432,7 @@ dimension
    : '[' dimension_constant_expression ':' dimension_constant_expression ']'
    ;
 
-range
+range_
    : '[' msb_constant_expression ':' lsb_constant_expression ']'
    ;
 
@@ -463,7 +458,7 @@ function_port
    ;
 
 range_or_type
-   : range
+   : range_
    | 'integer'
    | 'real'
    | 'realtime'
@@ -492,7 +487,7 @@ task_port_item
 // TJP added net_type? to these input/output/inout decls. wasn't in spec.
 // factored out header
 tf_decl_header
-   : ('input' | 'output' | 'inout') net_type? ('reg')? ('signed')? (range)?
+   : ('input' | 'output' | 'inout') net_type? ('reg')? ('signed')? (range_)?
    | ('input' | 'output' | 'inout') net_type? (task_port_type)?
    ;
 
@@ -520,7 +515,7 @@ block_item_declaration
    ;
 
 block_reg_declaration
-   : 'reg' ('signed')? (range)? list_of_block_variable_identifiers ';'
+   : 'reg' ('signed')? (range_)? list_of_block_variable_identifiers ';'
    ;
 
 list_of_block_variable_identifiers
@@ -579,7 +574,7 @@ pull_gate_instance
    ;
 
 name_of_gate_instance
-   : gate_instance_identifier (range)?
+   : gate_instance_identifier (range_)?
    ;
 
 // 3.2 Primitive strengths
@@ -694,7 +689,7 @@ module_instance
    ;
 
 name_of_instance
-   : module_instance_identifier (range)?
+   : module_instance_identifier (range_)?
    ;
 
 list_of_port_connections
@@ -756,75 +751,58 @@ generate_block
 /*
 // 5 UDP declaration and instantiation
 // 5.1 UDP declaration
-
 udp_declaration :
 attribute_instance* 'primitive' udp_identifier ( udp_port_list ) ';' udp_port_declaration ( udp_port_declaration )* udp_body 'endprimitive'
 | attribute_instance* 'primitive' udp_identifier ( udp_declaration_port_list ) ';' udp_body 'endprimitive'
 ;
-
 // 5.2 UDP ports
-
 udp_port_list : output_port_identifier ',' input_port_identifier ( ',' input_port_identifier )* ;
 udp_declaration_port_list : udp_output_declaration ',' udp_input_declaration ( ',' udp_input_declaration )* ;
 udp_port_declaration : udp_output_declaration ';'
 | udp_input_declaration ';'
 | udp_reg_declaration ';'
 ;
-
 udp_output_declaration :
 attribute_instance* 'output' port_identifier
 |
 attribute_instance* 'output' 'reg' port_identifier ( '=' constant_expression )?
 ;
-
 udp_input_declaration : attribute_instance* 'input' list_of_port_identifiers ;
 udp_reg_declaration : attribute_instance* 'reg' variable_identifier ;
 */
 // 5.3 UDP body
 /** can take out user defined primitives
-
 Use a lexer mode to handle table: switch to new mode upon table, switch
 back upon endtable.
-
 udp_body : combinational_body | sequential_body ;
 combinational_body : 'table' Combinational_entry+ 'endtable' ;
 Combinational_entry : Level_input_list White_space? ':' White_space? Output_symbol White_space? ';' ;
 sequential_body : ( udp_initial_statement )? 'table' Sequential_entry+ 'endtable' ;
 udp_initial_statement : 'initial' output_port_identifier '=' Init_val ';' ;
-
 Init_val : '1\'b0' | '1\'b1' | '1\'bx' | '1\'bX' | '1\'B0' | '1\'B1' | '1\'Bx' | '1\'BX' | '1' | '0' ;
-
 Sequential_entry : Seq_input_list White_space? ':' White_space? Current_state White_space? ':' White_space? Next_state White_space? ';' ;
-
 fragment
 Seq_input_list : Level_input_list | Edge_input_list ;
-
 fragment
 Level_input_list : Level_symbol+ ;
-
 fragment
 Edge_input_list : Level_symbol* Edge_indicator Level_symbol* ;
 fragment
 Edge_indicator : '(' Level_symbol Level_symbol ')' | Edge_symbol ;
-
 fragment
 Current_state : Level_symbol ;
 fragment
 Next_state : Output_symbol | '-' ;
-
 fragment
 Output_symbol : [01xX] ;
 fragment
 Level_symbol : [01xX?bB] ;
 fragment
 Edge_symbol : [rRfFpPnN*] ;
-
 // 5.4 UDP instantiation
-
 udp_instantiation : udp_identifier ( drive_strength )? ( delay2 )? udp_instance ( ',' udp_instance )* ';' ;
 udp_instance : ( name_of_udp_instance )? '(' output_terminal ',' input_terminal ( ',' input_terminal )* ')' ;
-name_of_udp_instance : udp_instance_identifier ( range )? ;
-
+name_of_udp_instance : udp_instance_identifier ( range_ )? ;
 */
 continuous_assign
    : 'assign' (drive_strength)? (delay3)? list_of_net_assignments ';'
@@ -1239,36 +1217,27 @@ setup_timing_check
 | width_timing_check
 | nochange_timing_check
 ;
-
 setup_timing_check : '$setup' '(' data_event ',' reference_event ',' timing_check_limit ( ',' ( notify_reg )? )? ')' ';' ;
 hold_timing_check : '$hold' '(' reference_event ',' data_event ',' timing_check_limit ( ',' ( notify_reg )? )? ')' ';' ;
 setuphold_timing_check :
 '$setuphold' '(' reference_event ',' data_event ',' timing_check_limit ',' timing_check_limit ( ',' ( notify_reg )? ( ',' ( stamptime_condition )? ( ',' ( checktime_condition )? ( ',' ( delayed_reference )? ( ',' ( delayed_data )? )? )? )? )? )? ')' ';'
 ;
-
 recovery_timing_check : '$recovery' '(' reference_event ',' data_event ',' timing_check_limit ( ',' ( notify_reg )? )? ')' ';' ;
 removal_timing_check : '$removal' '(' reference_event ',' data_event ',' timing_check_limit ( ',' ( notify_reg )? )? ')' ';' ;
-
 recrem_timing_check :
 '$recrem' '(' reference_event ',' data_event ',' timing_check_limit ',' timing_check_limit ( ',' ( notify_reg )? ( ',' ( stamptime_condition )? ( ',' ( checktime_condition )? ( ',' ( delayed_reference )? ( ',' ( delayed_data )? )? )? )? )? )? ')' ';'
 ;
-
 skew_timing_check : '$skew' '(' reference_event ',' data_event ',' timing_check_limit ( ',' ( notify_reg )? )? ')' ';' ;
-
 timeskew_timing_check :
 '$timeskew' '(' reference_event ',' data_event ',' timing_check_limit ( ',' ( notify_reg )? ( ',' ( event_based_flag )? ( ',' ( remain_active_flag )? )? )? )? ')' ';'
 ;
-
 fullskew_timing_check :
 '$fullskew' '(' reference_event ',' data_event ',' timing_check_limit ',' timing_check_limit ( ',' ( notify_reg )? ( ',' ( event_based_flag )? ( ',' ( remain_active_flag )? )? )? )? ')' ';'
 ;
-
 period_timing_check : '$period' '(' controlled_reference_event ',' timing_check_limit ( ',' ( notify_reg )? )? ')' ';' ;
-
 width_timing_check :
 '$width' '(' controlled_reference_event ',' timing_check_limit ',' threshold ( ',' ( notify_reg )? )? ')' ';'
 ;
-
 nochange_timing_check :
 '$nochange' '(' reference_event ',' data_event ',' start_edge_offset ',' end_edge_offset ( ',' ( notify_reg )? )? ')' ';'
 ;
@@ -1328,17 +1297,14 @@ timing_check_limit
 timing_check_event :
 ( timing_check_event_control )? specify_terminal_descriptor ( '&&&' timing_check_condition )?
 ;
-
 controlled_timing_check_event :
 timing_check_event_control specify_terminal_descriptor ( '&&&' timing_check_condition )?
 ;
-
 timing_check_event_control :
 'posedge'
 | 'negedge'
 //| edge_control_specifier
 ;
-
 specify_terminal_descriptor :
 specify_input_terminal_descriptor
 | specify_output_terminal_descriptor
@@ -1346,7 +1312,6 @@ specify_input_terminal_descriptor
 */
 /* context-sensitive, leave for now
 edge_control_specifier : 'edge' '[' Edge_descriptor ( ',' Edge_descriptor )? ']' ;
-
 fragment
 Edge_descriptor :
 '01'
@@ -1354,12 +1319,10 @@ Edge_descriptor :
 | [xXzZ] [01]
 | [01] [xXzZ]
 ;
-
 timing_check_condition :
 scalar_timing_check_condition
 | '(' scalar_timing_check_condition ')'
 ;
-
 scalar_timing_check_condition :
 expression
 | '~' expression
@@ -1368,7 +1331,6 @@ expression
 | expression '!=' Scalar_constant
 | expression '!==' Scalar_constant
 ;
-
 Scalar_constant : '1\'b0' | '1\'b1' | '1\'B0' | '1\'B1' | 'b0' | 'b1' | 'B0' | 'B1' | '1' | '0' ;
 */
 // 8 Expressions
@@ -1802,10 +1764,6 @@ One_line_comment
 Block_comment
    : '/*' .*? '*/' -> channel (HIDDEN)
    ;
-   
-Block_attribute
-   : '(*' .*? '*)' -> channel (HIDDEN)
-   ;
 
 // 9.3 Identifiers
 arrayed_identifier
@@ -1826,7 +1784,7 @@ config_identifier
    ;
 
 escaped_arrayed_identifier
-   : Escaped_identifier (range)?
+   : Escaped_identifier (range_)?
    ;
 
 escaped_hierarchical_identifier
@@ -1945,7 +1903,7 @@ real_identifier
    ;
 
 simple_arrayed_identifier
-   : Simple_identifier (range)?
+   : Simple_identifier (range_)?
    ;
 
 simple_hierarchical_identifier
@@ -1955,7 +1913,8 @@ simple_hierarchical_identifier
 specparam_identifier
    : identifier
    ;
-   
+
+
 Simple_identifier
    : [a-zA-Z_] [a-zA-Z0-9_$]*
    ;
@@ -1964,8 +1923,9 @@ Dollar_Identifier
    : '$' [a-zA-Z0-9_$] [a-zA-Z0-9_$]*
    ;
 
+
 Time_Identifier
-   : [0-9] + [mnpf] 's'
+   : [0-9] + [mnpf]? 's'
    ;
 
 system_function_identifier
